@@ -1,18 +1,39 @@
 import ntptime
 ntptime.settime()
 
-
-"""Implements a HD44780 character LCD connected via PCF8574 on I2C.
+"""Implements a HD44780 character LCD connected via PCF8574AT on I2C.
    This was tested with: https://www.wemos.cc/product/d1-mini.html"""
 
 from time import sleep_ms, ticks_ms, localtime
-from machine import I2C, Pin, RTC
+from machine import I2C, Pin, RTC, Timer
 from esp8266_i2c_lcd import I2cLcd
 
-# The PCF8574 has a jumper selectable address: 0x20 - 0x27
+# The PCF8574AT address: 0x3F
 DEFAULT_I2C_ADDR = 0x3F
 
 rtc = RTC()
+
+motion = False
+
+def handle_interrupt(pin):
+  print("interrupt triggered")
+  global motion
+  motion = True
+  global interrupt_pin
+  interrupt_pin = pin 
+
+def turn_off_relay():
+  print("turn off relay")
+  global motion
+  motion = False
+  relay.value(0)
+
+relay = Pin(14, Pin.OUT)
+pir = Pin(12, Pin.IN, Pin.PULL_UP)
+
+pir.irq(trigger=Pin.IRQ_RISING, handler=handle_interrupt)
+
+tim = Timer(-1)
 
 def test_main():
     """Test function for verifying basic functionality."""
@@ -33,5 +54,14 @@ def test_main():
         sleep_ms(50)
         count += 1
 
+        global motion
+        if motion:
+            print('Motion detected! Interrupt caused by:', interrupt_pin)
+            relay.value(1)
+            sleep_ms(500)
+            motion = False
+            relay.value(0)
+            # tim.init(period=3000, mode=Timer.ONE_SHOT, callback=turn_off_relay)
+            
 #if __name__ == "__main__":
 test_main()
