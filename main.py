@@ -28,7 +28,10 @@ def turn_off_relay():
   motion = False
   relay.value(0)
 
+# NodeMCU D5
 relay = Pin(14, Pin.OUT)
+
+# NodeMCU D6
 pir = Pin(12, Pin.IN, Pin.PULL_UP)
 
 pir.irq(trigger=Pin.IRQ_RISING, handler=handle_interrupt)
